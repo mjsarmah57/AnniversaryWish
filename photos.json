@@ -1,0 +1,7 @@
+[
+    { "year": 2022, "src": "image1.jpeg", "alt": "Our first trip together", "date": "06/10/2022" },
+    { "year": 2022, "src": "image2.jpeg", "alt": "Anniversary dinner", "date": "05/15/2022" },
+    { "year": 2023, "src": "image1.jpeg", "alt": "Hiking in the mountains", "date": "08/20/2023" },
+    { "year": 2023, "src": "image2.jpeg", "alt": "Christmas celebration", "date": "12/25/2023" },
+    { "year": 2024, "src": "image1.jpeg", "alt": "Our new puppy!", "date": "03/05/2024" }
+]
