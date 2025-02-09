@@ -1,4 +1,4 @@
-// script2.js
+// script2.js (with updated timeline data and functions)
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -26,13 +26,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const ANNIVERSARY_DATE = "24/02/2022";
     let relationshipStartDate;
     let timelineData = [];
-    let photosData = [];  // This will hold the photo data from photos.json
+    let photosData = [];
+    let isMusicPlaying = false;
 
     // --- Event Listeners ---
 
     yesButton.addEventListener('click', function() {
         datePopup.style.display = 'flex';
         welcomePage.style.display = 'none';
+        if (!isMusicPlaying) {
+            playBackgroundMusic();
+        }
     });
 
     noButton.addEventListener('click', function() {
@@ -64,7 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
     viewGalleryButton.addEventListener('click', function() {
         anniversaryPage.style.display = 'none';
         photoGallery.style.display = 'block';
-        // createFilterButtons and displayPhotos are now called AFTER data is fetched.
+        createFilterButtons();
+        displayPhotos('all');
         createConfetti(document.querySelector('.gallery-page .confetti-container'), 50);
     });
 
@@ -73,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         anniversaryPage.style.display = 'block';
     });
 
-    // --- Audio Control ---
+     // --- Audio Control ---
 
     function playBackgroundMusic() {
         bgMusic.play()
@@ -91,14 +96,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function initialize() {
         relationshipStartDate = parseDate(ANNIVERSARY_DATE);
 
+        // UPDATED TIMELINE DATA
         timelineData = [
-           { year: 2022, title: "Our First Chapter", description: "The magical beginning of our journey together." },
-            { year: 2023, title: "Adventures Abroad", description: "Exploring new horizons and making unforgettable memories." },
-            { year: 2024, title: "Building Our Nest", description: "Creating a home filled with love, laughter, and dreams." }
+            { date: "15/05/2022", title: "Our First Chapter", description: "The magical beginning of our journey together." },
+            { date: "20/08/2022", title: "First Trip", description: "Our amazing trip to the beach." },
+            { date: "25/12/2022", title: "First Christmas", description: "Spent our first Christmas together." },
+            { date: "14/02/2023", title: "Valentine's Day", description: "A romantic Valentine's Day dinner." },
+            { date: "10/07/2023", title: "Moved Together", description: "Started living together in our new home!" },
+            { date: "01/01/2024", title: "New Year's Kiss", description: "Welcomed the new year with a kiss." },
         ];
         createTimeline();
 
-        // Fetch photo data from JSON file
         fetch('photos.json')
             .then(response => {
                 if (!response.ok) {
@@ -108,18 +116,19 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 photosData = data;
-                createFilterButtons(); // Create filter buttons *after* data is loaded
-                displayPhotos('all');   // Display photos *after* data is loaded
+                createFilterButtons();
+                displayPhotos('all');
             })
             .catch(error => {
                 console.error('Error fetching photo data:', error);
                 galleryGrid.innerHTML = '<p>Error loading photos. Please try again later.</p>';
             });
 
+
         createStars(document.querySelector('.welcome-container .starry-bg'), 50);
         createStars(document.querySelector('.main-page .starry-bg'), 50);
         createStars(document.querySelector('.gallery-page .starry-bg'), 50);
-      createConfetti(document.querySelector('.welcome-container .confetti-container'), 50); // Welcome page confetti
+        createConfetti(document.querySelector('.welcome-container .confetti-container'),50);
     }
 
 
@@ -161,21 +170,52 @@ document.addEventListener('DOMContentLoaded', function() {
         timerDisplay.textContent = `Our Time Together: ${years} Years, ${days} Days, ${hours} Hours, ${minutes} Minutes, ${seconds} Seconds`;
     }
 
-  function createTimeline() {
+    function createTimeline() {
         timelineContainer.innerHTML = '';
-        timelineData.sort((a, b) => a.year - b.year);
+
+        // Sort timelineData by date *descending* (most recent first)
+        timelineData.sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
 
         timelineData.forEach(item => {
             const timelineItem = document.createElement('div');
             timelineItem.classList.add('timeline-item');
-            timelineItem.innerHTML = `
-                <div class="year">${item.year}</div>
+
+            const dateBox = document.createElement('div');
+            dateBox.classList.add('timeline-item-date-box');
+
+            const dateElement = document.createElement('span');
+            dateElement.classList.add('timeline-item-date');
+            dateElement.textContent = formatDate(item.date); // Format the date nicely
+            dateBox.appendChild(dateElement);
+
+            const yearElement = document.createElement('span'); // Create year span
+            yearElement.classList.add('timeline-item-year');
+            yearElement.textContent = parseDate(item.date).getFullYear();
+            dateBox.appendChild(yearElement);
+
+
+            const content = document.createElement('div');
+            content.classList.add('timeline-item-content');
+            content.innerHTML = `
                 <h3>${item.title}</h3>
                 <p>${item.description}</p>
             `;
+
+            timelineItem.appendChild(dateBox);
+            timelineItem.appendChild(content);
             timelineContainer.appendChild(timelineItem);
         });
     }
+
+    // Helper function to format the date (e.g., "May 15")
+    function formatDate(dateString) {
+        const date = parseDate(dateString);
+        const monthNames = ["January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+        ];
+        return `${monthNames[date.getMonth()]} ${date.getDate()}`;
+    }
+
     function createFilterButtons() {
         filterButtonsContainer.innerHTML = '';
         const years = [...new Set(photosData.map(photo => photo.year))];
@@ -185,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allButton.textContent = 'All';
         allButton.setAttribute('data-year', 'all');
         allButton.classList.add('btn');
-        allButton.addEventListener('click', () => displayPhotos('all')); // Simplified
+        allButton.addEventListener('click', () => displayPhotos('all'));
         filterButtonsContainer.appendChild(allButton);
 
         years.forEach(year => {
@@ -193,40 +233,47 @@ document.addEventListener('DOMContentLoaded', function() {
             button.textContent = year;
             button.setAttribute('data-year', year);
             button.classList.add('btn');
-            button.addEventListener('click', () => displayPhotos(year)); // Simplified
+            button.addEventListener('click', () => displayPhotos(year));
             filterButtonsContainer.appendChild(button);
         });
     }
+
     function displayPhotos(year) {
-        galleryGrid.innerHTML = ''; // Clear previous photos
-        const filteredPhotos = (year === 'all') ? photosData : photosData.filter(photo => photo.year === year);
+    galleryGrid.innerHTML = ''; // Clear previous photos
 
-        filteredPhotos.forEach(photo => {
-            const galleryItem = document.createElement('div');
-            galleryItem.classList.add('gallery-item');
+    const filteredPhotos = (year === 'all') ? photosData : photosData.filter(photo => photo.year === year);
 
-            const img = document.createElement('img');
-            img.src = photo.src;
-            img.alt = photo.alt;
-            galleryItem.appendChild(img);
+    filteredPhotos.forEach(photo => {
+        const galleryItem = document.createElement('div');
+        galleryItem.classList.add('gallery-item');
 
-            const infoOverlay = document.createElement('div');
-            infoOverlay.classList.add('gallery-item-info');
+        // Create the image element
+        const img = document.createElement('img');
+        img.src = photo.src;
+        img.alt = photo.alt;
+        galleryItem.appendChild(img);
 
-            const dateElement = document.createElement('p');
-            dateElement.classList.add('gallery-item-date');
-            dateElement.textContent = photo.date || '';
-            infoOverlay.appendChild(dateElement);
+        // Create the info overlay
+        const infoOverlay = document.createElement('div');
+        infoOverlay.classList.add('gallery-item-info');
 
-            const descriptionElement = document.createElement('p');
-            descriptionElement.classList.add('gallery-item-description');
-            descriptionElement.textContent = photo.alt || '';
-            infoOverlay.appendChild(descriptionElement);
+        // Create the date element
+        const dateElement = document.createElement('p');
+        dateElement.classList.add('gallery-item-date');
+        dateElement.textContent = photo.date || ''; // Use empty string if date is missing
+        infoOverlay.appendChild(dateElement);
 
-            galleryItem.appendChild(infoOverlay);
-            galleryGrid.appendChild(galleryItem);
-        });
-    }
+        // Create the description element
+        const descriptionElement = document.createElement('p');
+        descriptionElement.classList.add('gallery-item-description');
+        descriptionElement.textContent = photo.alt || '';  // Use alt text as description, or empty string
+        infoOverlay.appendChild(descriptionElement);
+
+        galleryItem.appendChild(infoOverlay); // Add the overlay to the item
+        galleryGrid.appendChild(galleryItem);  // Add the item to the grid
+    });
+}
+
     function createStars(container, numStars) {
         if (!container) {
             console.error("createStars: Container not found.");
@@ -237,9 +284,9 @@ document.addEventListener('DOMContentLoaded', function() {
             star.classList.add('star');
             star.style.left = `${Math.random() * 100}%`;
             star.style.top = `${Math.random() * 100}%`;
-            star.style.width = `${Math.random() * 3 + 1}px`; // Vary star size
+            star.style.width = `${Math.random() * 3 + 1}px`;
             star.style.height = star.style.width;
-            star.style.animationDuration = `${Math.random() * 3 + 2}s`; // Vary animation speed
+            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
             container.appendChild(star);
         }
     }
@@ -250,16 +297,15 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         for (let i = 0; i < numHearts; i++) {
-            const heart = document.createElement('i'); // Use <i> for Font Awesome
-            heart.classList.add('fas', 'fa-heart', 'heart'); // Add Font Awesome classes
+            const heart = document.createElement('i');
+            heart.classList.add('fas', 'fa-heart', 'heart');
             heart.style.left = `${Math.random() * 100}%`;
             heart.style.top = `${Math.random() * 100}%`;
             heart.style.animationDelay = `${Math.random() * 2}s`;
             heart.style.transform = `scale(${Math.random()})`;
             container.appendChild(heart);
 
-            // Set CSS variables for animation
-            heart.style.setProperty('--x-end', `${(Math.random() - 0.5) * 500}px`); // -250px to 250px
+            heart.style.setProperty('--x-end', `${(Math.random() - 0.5) * 500}px`);
             heart.style.setProperty('--rotate', `${(Math.random() * 360) - 180}deg`);
         }
     }
